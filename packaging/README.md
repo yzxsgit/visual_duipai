@@ -6,9 +6,11 @@ This project is packaged with PyInstaller.
 
 From PowerShell, run:
 
+Replace <path-to-visual_duipai> with the folder where this repository is checked out.
+
 ```powershell
-cd D:\yzx\Documents\claude_code\duipaiisual_duipai
-.uild_exe.ps1
+cd <path-to-visual_duipai>
+.\build_exe.ps1
 ```
 
 The output is:
