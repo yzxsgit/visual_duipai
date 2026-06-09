@@ -4,4 +4,4 @@ __pycache__/
 /duipai_work/
 /build/
 /dist/
-*.spec
+/VisualDuipai.spec
