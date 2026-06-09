@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 /.duipai_tmp/
 /duipai_work/
+/build/
+/dist/
+*.spec
