@@ -65,6 +65,10 @@ class DropCard(ctk.CTkFrame):
         self.path = path
         self.path_label.configure(text=str(path))
 
+    def clear_path(self) -> None:
+        self.path = None
+        self.path_label.configure(text="未选择")
+
     def _choose_file(self, _event=None) -> None:
         if not getattr(self, "_enabled", True):
             return
@@ -97,9 +101,12 @@ class DuipaiApp(TkinterDnD.Tk):
         self.stop_event = threading.Event()
         self.worker_thread: threading.Thread | None = None
         self.input_widgets: list[object] = []
+        self.closing = False
+        self.after_id: str | None = None
 
         self._build_ui()
-        self.after(100, self._drain_events)
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.after_id = self.after(100, self._drain_events)
 
     def _build_ui(self) -> None:
         self.grid_columnconfigure(0, weight=1)
@@ -164,7 +171,8 @@ class DuipaiApp(TkinterDnD.Tk):
         try:
             card.set_path(validate_cpp_path(raw_path))
         except ValueError as exc:
-            self._log(f"无效文件: {exc}")
+            card.clear_path()
+            self._log(f"无效文件，已清除选择: {exc}")
 
     def _start(self) -> None:
         try:
@@ -206,17 +214,17 @@ class DuipaiApp(TkinterDnD.Tk):
                 ("正解 / 待测", answer, paths.answer_exe),
             ):
                 self._emit("log", f"编译{label}: {source}")
-                compile_cpp(source, output, config)
+                compile_cpp(source, output, config, stop_event=self.stop_event)
                 self._check_stop()
 
             for round_no in range(1, rounds + 1):
                 self._check_stop()
                 self._emit("log", f"Round {round_no}/{rounds}")
-                run_generator(paths, config)
+                run_generator(paths, config, stop_event=self.stop_event)
                 self._check_stop()
-                run_solution(paths.force_exe, paths.input_file, paths.force_output, paths, config)
+                run_solution(paths.force_exe, paths.input_file, paths.force_output, paths, config, stop_event=self.stop_event)
                 self._check_stop()
-                run_solution(paths.answer_exe, paths.input_file, paths.answer_output, paths, config)
+                run_solution(paths.answer_exe, paths.input_file, paths.answer_output, paths, config, stop_event=self.stop_event)
 
                 if not compare_outputs(paths.force_output, paths.answer_output):
                     write_diff(paths.force_output, paths.answer_output, paths.diff_output)
@@ -256,8 +264,34 @@ class DuipaiApp(TkinterDnD.Tk):
 
     def _stop(self) -> None:
         self.stop_event.set()
-        self._log("正在停止，将在当前步骤结束后退出...")
+        if not self.closing:
+            self._log("正在停止，正在中断当前子进程...")
+            self.stop_button.configure(state="disabled")
+
+    def _on_close(self) -> None:
+        self.closing = True
+        self.stop_event.set()
+        self._set_inputs_enabled(False)
         self.stop_button.configure(state="disabled")
+        if self.worker_thread is not None and self.worker_thread.is_alive():
+            self.after_id = self.after(100, self._wait_for_worker_close)
+            return
+        self._destroy_after_worker_exit()
+
+    def _wait_for_worker_close(self) -> None:
+        if self.worker_thread is not None and self.worker_thread.is_alive():
+            self.after_id = self.after(100, self._wait_for_worker_close)
+            return
+        self._destroy_after_worker_exit()
+
+    def _destroy_after_worker_exit(self) -> None:
+        if self.after_id is not None:
+            try:
+                self.after_cancel(self.after_id)
+            except tk.TclError:
+                pass
+            self.after_id = None
+        self.destroy()
 
     def _open_work_dir(self) -> None:
         paths = ensure_work_dir(WORK_DIR)
@@ -287,6 +321,10 @@ class DuipaiApp(TkinterDnD.Tk):
         try:
             while True:
                 event_type, payload = self.events.get_nowait()
+                if self.closing:
+                    if event_type == "done":
+                        self._destroy_after_worker_exit()
+                    continue
                 if event_type == "log":
                     self._log(str(payload))
                 elif event_type == "progress":
@@ -296,7 +334,8 @@ class DuipaiApp(TkinterDnD.Tk):
                     self.stop_button.configure(state="disabled")
         except queue.Empty:
             pass
-        self.after(100, self._drain_events)
+        if not self.closing:
+            self.after_id = self.after(100, self._drain_events)
 
     def _log(self, message: str) -> None:
         self.log_text.configure(state="normal")

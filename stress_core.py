@@ -5,6 +5,8 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
@@ -119,29 +121,48 @@ def run_command(
     stdin_file: Optional[Path] = None,
     stdout_file: Optional[Path] = None,
     cwd: Optional[Path] = None,
+    stop_event: Optional[threading.Event] = None,
 ) -> CommandResult:
     args_list = [str(arg) for arg in args]
     stdin_handle = None
     stdout_handle = None
+    process: Optional[subprocess.Popen[str]] = None
     try:
         if stdin_file is not None:
             stdin_handle = stdin_file.open("r", encoding="utf-8", errors="replace")
         if stdout_file is not None:
             stdout_handle = stdout_file.open("w", encoding="utf-8", errors="replace")
 
-        completed = subprocess.run(
+        process = subprocess.Popen(
             args_list,
             stdin=stdin_handle,
             stdout=stdout_handle if stdout_handle is not None else subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=str(cwd) if cwd is not None else None,
             text=True,
-            timeout=timeout_seconds,
             shell=False,
         )
-    except subprocess.TimeoutExpired as exc:
-        raise CommandError(f"命令超时: {' '.join(args_list)}") from exc
+        deadline = time.monotonic() + timeout_seconds
+        while process.poll() is None:
+            if stop_event is not None and stop_event.is_set():
+                process.terminate()
+                try:
+                    process.communicate(timeout=1)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.communicate()
+                raise StopRequested()
+            if time.monotonic() >= deadline:
+                process.kill()
+                process.communicate()
+                raise CommandError(f"命令超时: {' '.join(args_list)}")
+            time.sleep(0.05)
+
+        stdout, stderr = process.communicate()
     finally:
+        if process is not None and process.poll() is None:
+            process.kill()
+            process.wait()
         if stdin_handle is not None:
             stdin_handle.close()
         if stdout_handle is not None:
@@ -149,16 +170,16 @@ def run_command(
 
     result = CommandResult(
         args=args_list,
-        returncode=completed.returncode,
-        stdout=completed.stdout or "",
-        stderr=completed.stderr or "",
+        returncode=process.returncode,
+        stdout=stdout or "",
+        stderr=stderr or "",
     )
     if result.returncode != 0:
         raise CommandError(f"命令失败: {result.command_text}", result)
     return result
 
 
-def compile_cpp(source: Path, output: Path, config: BuildConfig) -> CommandResult:
+def compile_cpp(source: Path, output: Path, config: BuildConfig, stop_event: Optional[threading.Event] = None) -> CommandResult:
     require_compiler(config.compiler)
     output.parent.mkdir(parents=True, exist_ok=True)
     args = [
@@ -169,7 +190,7 @@ def compile_cpp(source: Path, output: Path, config: BuildConfig) -> CommandResul
         "-o",
         str(output),
     ]
-    return run_command(args, timeout_seconds=config.compile_timeout_seconds)
+    return run_command(args, timeout_seconds=config.compile_timeout_seconds, stop_event=stop_event)
 
 
 def read_text_lossy(path: Path) -> str:
@@ -211,20 +232,29 @@ def write_diff(expected_file: Path, actual_file: Path, diff_file: Path) -> None:
     )
 
 
-def run_generator(paths: StressPaths, config: BuildConfig) -> CommandResult:
+def run_generator(paths: StressPaths, config: BuildConfig, stop_event: Optional[threading.Event] = None) -> CommandResult:
     return run_command(
         [paths.gen_exe],
         timeout_seconds=config.run_timeout_seconds,
         stdout_file=paths.input_file,
         cwd=paths.work_dir,
+        stop_event=stop_event,
     )
 
 
-def run_solution(executable: Path, input_file: Path, output_file: Path, paths: StressPaths, config: BuildConfig) -> CommandResult:
+def run_solution(
+    executable: Path,
+    input_file: Path,
+    output_file: Path,
+    paths: StressPaths,
+    config: BuildConfig,
+    stop_event: Optional[threading.Event] = None,
+) -> CommandResult:
     return run_command(
         [executable],
         timeout_seconds=config.run_timeout_seconds,
         stdin_file=input_file,
         stdout_file=output_file,
         cwd=paths.work_dir,
+        stop_event=stop_event,
     )
