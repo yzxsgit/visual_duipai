@@ -58,11 +58,26 @@ python -m pip install -r $Requirements
 Write-Host "Installing PyInstaller..." -ForegroundColor Cyan
 python -m pip install pyinstaller
 
-Write-Host "Stopping any running VisualDuipai process..." -ForegroundColor Cyan
+Write-Host "Checking for running VisualDuipai process at $ExePath..." -ForegroundColor Cyan
 $RunningProcesses = Get-Process -Name "VisualDuipai" -ErrorAction SilentlyContinue
 if ($RunningProcesses) {
-    Write-Host "Stopping $($RunningProcesses.Count) running VisualDuipai process(es)..." -ForegroundColor Yellow
-    $RunningProcesses | Stop-Process -Force
+    foreach ($Process in $RunningProcesses) {
+        try {
+            $ProcessPath = $Process.Path
+        }
+        catch {
+            Write-Warning "Skipping VisualDuipai process $($Process.Id): executable path could not be read."
+            continue
+        }
+
+        if ($ProcessPath -eq $ExePath) {
+            Write-Host "Stopping VisualDuipai process $($Process.Id) at $ProcessPath..." -ForegroundColor Yellow
+            Stop-Process -Id $Process.Id -Force
+        }
+        else {
+            Write-Warning "Skipping VisualDuipai process $($Process.Id): executable path '$ProcessPath' does not match '$ExePath'."
+        }
+    }
 }
 else {
     Write-Host "No running VisualDuipai process found."

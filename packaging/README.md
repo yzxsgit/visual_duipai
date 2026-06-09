@@ -13,6 +13,12 @@ cd <path-to-visual_duipai>
 .\build_exe.ps1
 ```
 
+If PowerShell blocks script execution, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build_exe.ps1
+```
+
 The output is:
 
 ```text
