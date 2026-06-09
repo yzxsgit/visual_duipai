@@ -6,6 +6,7 @@ from stress_core import (
     BuildConfig,
     StressPaths,
     compare_outputs,
+    ensure_work_dir,
     executable_name,
     make_diff,
     validate_cpp_path,
@@ -56,6 +57,14 @@ class StressCoreTests(unittest.TestCase):
             actual.write_text("1\n3\n", encoding="utf-8")
             self.assertFalse(compare_outputs(expected, actual))
 
+    def test_compare_outputs_detects_different_invalid_bytes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            expected = Path(tmp) / "expected.out"
+            actual = Path(tmp) / "actual.out"
+            expected.write_bytes(b"\xff\n")
+            actual.write_bytes(b"\xfe\n")
+            self.assertFalse(compare_outputs(expected, actual))
+
     def test_make_diff_writes_unified_diff(self):
         diff = make_diff("1\n2\n", "1\n3\n")
         self.assertIn("--- expected", diff)
@@ -70,6 +79,12 @@ class StressCoreTests(unittest.TestCase):
             self.assertEqual(paths.force_output, Path(tmp) / "force.out")
             self.assertEqual(paths.answer_output, Path(tmp) / "answer.out")
             self.assertEqual(paths.diff_output, Path(tmp) / "diff.out")
+
+    def test_ensure_work_dir_returns_absolute_work_dir_for_relative_path(self):
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as tmp:
+            relative_work_dir = Path(tmp).relative_to(Path.cwd())
+            paths = ensure_work_dir(relative_work_dir)
+            self.assertTrue(paths.work_dir.is_absolute())
 
     def test_executable_name_uses_windows_suffix_only_on_windows(self):
         name = executable_name("force")

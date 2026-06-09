@@ -102,8 +102,9 @@ def validate_cpp_path(path: os.PathLike[str] | str) -> Path:
 
 
 def ensure_work_dir(work_dir: Path) -> StressPaths:
-    work_dir.mkdir(parents=True, exist_ok=True)
-    return StressPaths(work_dir)
+    resolved_work_dir = work_dir.expanduser().resolve()
+    resolved_work_dir.mkdir(parents=True, exist_ok=True)
+    return StressPaths(resolved_work_dir)
 
 
 def require_compiler(compiler: str) -> None:
@@ -175,10 +176,13 @@ def read_text_lossy(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def normalized_output_lines(path: Path) -> list[str]:
-    text = read_text_lossy(path)
-    lines = [line.rstrip() for line in text.splitlines()]
-    while lines and lines[-1] == "":
+TRAILING_ASCII_WHITESPACE = b" \t\n\r\v\f"
+
+
+def normalized_output_lines(path: Path) -> list[bytes]:
+    data = path.read_bytes()
+    lines = [line.rstrip(TRAILING_ASCII_WHITESPACE) for line in data.splitlines()]
+    while lines and lines[-1] == b"":
         lines.pop()
     return lines
 
