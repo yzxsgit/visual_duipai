@@ -7,7 +7,36 @@ $AppEntry = Join-Path $ProjectRoot "duipai_gui.py"
 $Requirements = Join-Path $ProjectRoot "requirements.txt"
 $DistDir = Join-Path $ProjectRoot "dist"
 $BuildDir = Join-Path $ProjectRoot "build"
+$SpecPath = Join-Path $ProjectRoot "VisualDuipai.spec"
 $ExePath = Join-Path $DistDir "VisualDuipai.exe"
+
+function Remove-PathWithRetry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [int]$Attempts = 5,
+        [int]$SleepMilliseconds = 500
+    )
+
+    if (-not (Test-Path $Path)) {
+        return
+    }
+
+    for ($Attempt = 1; $Attempt -le $Attempts; $Attempt++) {
+        try {
+            Remove-Item $Path -Recurse -Force
+            return
+        }
+        catch {
+            if ($Attempt -eq $Attempts) {
+                throw
+            }
+
+            Write-Host "Remove failed for $Path (attempt $Attempt/$Attempts). Retrying..." -ForegroundColor Yellow
+            Start-Sleep -Milliseconds $SleepMilliseconds
+        }
+    }
+}
 
 Write-Host "VisualDuipai Windows EXE build" -ForegroundColor Cyan
 Write-Host "Project root: $ProjectRoot"
@@ -29,16 +58,20 @@ python -m pip install -r $Requirements
 Write-Host "Installing PyInstaller..." -ForegroundColor Cyan
 python -m pip install pyinstaller
 
+Write-Host "Stopping any running VisualDuipai process..." -ForegroundColor Cyan
+$RunningProcesses = Get-Process -Name "VisualDuipai" -ErrorAction SilentlyContinue
+if ($RunningProcesses) {
+    Write-Host "Stopping $($RunningProcesses.Count) running VisualDuipai process(es)..." -ForegroundColor Yellow
+    $RunningProcesses | Stop-Process -Force
+}
+else {
+    Write-Host "No running VisualDuipai process found."
+}
+
 Write-Host "Cleaning old build outputs..." -ForegroundColor Cyan
-if (Test-Path $BuildDir) {
-    Remove-Item $BuildDir -Recurse -Force
-}
-if (Test-Path $DistDir) {
-    Remove-Item $DistDir -Recurse -Force
-}
-if (Test-Path (Join-Path $ProjectRoot "VisualDuipai.spec")) {
-    Remove-Item (Join-Path $ProjectRoot "VisualDuipai.spec") -Force
-}
+Remove-PathWithRetry $BuildDir
+Remove-PathWithRetry $DistDir
+Remove-PathWithRetry $SpecPath
 
 Write-Host "Building VisualDuipai.exe..." -ForegroundColor Cyan
 python -m PyInstaller `
