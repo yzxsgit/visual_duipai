@@ -10,6 +10,19 @@ $BuildDir = Join-Path $ProjectRoot "build"
 $SpecPath = Join-Path $ProjectRoot "VisualDuipai.spec"
 $ExePath = Join-Path $DistDir "VisualDuipai.exe"
 
+function Invoke-NativeCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Command,
+        [string[]]$Arguments = @()
+    )
+
+    & $Command @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Command failed with exit code ${LASTEXITCODE}: $Command $($Arguments -join ' ')"
+    }
+}
+
 function Remove-PathWithRetry {
     param(
         [Parameter(Mandatory = $true)]
@@ -50,13 +63,13 @@ if (-not (Test-Path $Requirements)) {
 }
 
 Write-Host "Checking Python..." -ForegroundColor Cyan
-python --version
+Invoke-NativeCommand "python" @("--version")
 
 Write-Host "Installing runtime dependencies..." -ForegroundColor Cyan
-python -m pip install -r $Requirements
+Invoke-NativeCommand "python" @('-m', 'pip', 'install', '-r', $Requirements)
 
 Write-Host "Installing PyInstaller..." -ForegroundColor Cyan
-python -m pip install pyinstaller
+Invoke-NativeCommand "python" @('-m', 'pip', 'install', 'pyinstaller')
 
 Write-Host "Checking for running VisualDuipai process at $ExePath..." -ForegroundColor Cyan
 $RunningProcesses = Get-Process -Name "VisualDuipai" -ErrorAction SilentlyContinue
@@ -89,12 +102,7 @@ Remove-PathWithRetry $DistDir
 Remove-PathWithRetry $SpecPath
 
 Write-Host "Building VisualDuipai.exe..." -ForegroundColor Cyan
-python -m PyInstaller `
-    --noconsole `
-    --onefile `
-    --name VisualDuipai `
-    --collect-all tkinterdnd2 `
-    duipai_gui.py
+Invoke-NativeCommand "python" @('-m', 'PyInstaller', '--noconsole', '--onefile', '--name', 'VisualDuipai', '--collect-all', 'tkinterdnd2', 'duipai_gui.py')
 
 if (-not (Test-Path $ExePath)) {
     Write-Error "Build failed: $ExePath was not created. If PyInstaller reported that --collect-all is unsupported, upgrade it with: python -m pip install --upgrade pyinstaller"
