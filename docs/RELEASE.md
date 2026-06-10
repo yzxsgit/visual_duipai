@@ -33,7 +33,7 @@ Expected: all tests pass.
 ### 3. Build the EXE
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .uild_exe.ps1
+powershell -ExecutionPolicy Bypass -File .\build_exe.ps1
 ```
 
 Expected output includes:
