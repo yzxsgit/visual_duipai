@@ -41,9 +41,23 @@ PyInstaller 参数与 Windows 对齐：`--onefile --noconsole --name VisualDuipa
 - `sudo apt install python3-tk libfuse2`（tkinter 是 PyInstaller 打包时需要的，libfuse2 是 appimagetool 运行时需要的）
 - `pip install` 需要 `--break-system-packages`（PEP 668 环境）
 
-**AppDir 布局**：标准的 `AppRun` + `VisualDuipai.desktop`（`Exec=usr/bin/VisualDuipai`）+ `VisualDuipai.png` + `usr/bin/VisualDuipai`。
+**AppDir 布局**：标准的 `AppRun` + `VisualDuipai.desktop`（`Exec=usr/bin/VisualDuipai`）+ `usr/bin/VisualDuipai`。
 
-**产物管理**：`/AppDir/`、`*.AppImage`、`/build/`、`/dist/` 均在 `.gitignore` 中。
+图标复制到 4 个位置以兼容不同桌面环境：
+- `VisualDuipai.png` — .desktop 文件引用
+- `.DirIcon` — 文件管理器缩略图
+- `usr/share/icons/hicolor/256x256/apps/VisualDuipai.png` — 桌面菜单集成
+- `usr/share/pixmaps/VisualDuipai.png` — 部分 DE/FM 图标查找路径
+
+**产物管理**：`/AppDir/`、`*.AppImage`、`/build/`、`/dist/`、`/squashfs-root/` 均在 `.gitignore` 中。
+
+**常见构建问题**：
+| 症状 | 原因 | 解决 |
+|---|---|---|
+| `pip install` 报 PEP 668 错误 | 新版 Linux Python 拒绝系统级 pip | 已加 `--break-system-packages` |
+| `ModuleNotFoundError: tkinter` | PyInstaller 打包时缺少 tkinter | `sudo apt install python3-tk` |
+| appimagetool 报 `libfuse.so.2` | 缺少 FUSE 库 | `sudo apt install libfuse2` |
+| AppImage 图标不显示 | 尺寸/路径不符合标准 | 图标 256x256 + 四处路径 |
 
 ### Windows EXE
 
@@ -82,7 +96,7 @@ GUI 是单主线程（tkinter 要求）。点击"开始对拍"后启动一个 da
 
 ### 图标
 
-`assets/VisualDuipai.png` — 260x260 RGBA PNG，"二分叉再汇聚"设计。由 `assets/generate_icon.py` 用 Pillow 生成。build_linux.sh 打包时复制到 AppDir。
+`assets/VisualDuipai.png` — 256x256 RGBA PNG，"二分叉再汇聚"设计。由 `assets/generate_icon.py` 用 Pillow 生成。
 
 ## 平台注意
 
