@@ -2,6 +2,13 @@
 
 All notable changes to VisualDuipai will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- Linux AppImage 打包支持，通过 `build_linux.sh` 一键生成 `VisualDuipai-x86_64.AppImage`
+- 应用图标（二分叉再汇聚设计）
+
 ## v0.1.0 - 2026-06-10
 
 ### Added

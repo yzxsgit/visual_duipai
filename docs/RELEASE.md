@@ -113,3 +113,72 @@ Expected:
 
 - `build/`, `dist/`, `VisualDuipai.spec`, `VisualDuipai-v0.1.0-windows-x64.zip`, and `*.exe` artifacts are ignored if present.
 - `git status --short` has no tracked or untracked source changes after release documentation is committed.
+
+## Linux AppImage release checklist
+
+Run commands from the repository root.
+
+### 1. Start clean
+
+```bash
+git status --short --branch
+```
+
+Expected:
+
+```text
+## main
+```
+
+### 2. Run tests
+
+```bash
+python3 -m unittest discover -p "test*.py"
+```
+
+Expected: all tests pass.
+
+### 3. Build the AppImage
+
+```bash
+./build_linux.sh
+```
+
+Expected output includes:
+
+```text
+构建成功！
+输出: dist/VisualDuipai-x86_64.AppImage
+```
+
+### 4. Smoke-test the AppImage
+
+```bash
+test -f dist/VisualDuipai-x86_64.AppImage && echo "PASS: AppImage exists"
+test -x dist/VisualDuipai-x86_64.AppImage && echo "PASS: AppImage executable"
+```
+
+Expected:
+
+```text
+PASS: AppImage exists
+PASS: AppImage executable
+```
+
+### 5. Create the release asset
+
+Rename the AppImage for release:
+
+```bash
+cp dist/VisualDuipai-x86_64.AppImage VisualDuipai-v0.2.0-linux-x86_64.AppImage
+```
+
+### 6. Create the GitHub Release
+
+Create a GitHub Release with:
+
+- Tag: `v0.2.0`
+- Title: `VisualDuipai v0.2.0`
+- Assets:
+  - `VisualDuipai-v0.1.0-windows-x64.zip` (unchanged)
+  - `VisualDuipai-v0.2.0-linux-x86_64.AppImage`

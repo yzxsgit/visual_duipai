@@ -63,3 +63,45 @@ Future platform builds should be created on the target OS:
 - Linux: run PyInstaller on Linux and produce a Linux executable, with optional AppImage packaging later.
 
 This project does not cross-compile macOS or Linux builds from Windows.
+
+## Linux AppImage
+
+### 前提
+
+- Linux 系统（推荐 Ubuntu 20.04+）
+- `python3` 和 `pip` 已安装
+- `g++` 已安装（仅用于构建检查，不打包进 AppImage）
+
+### 一键打包
+
+```bash
+./build_linux.sh
+```
+
+输出：
+
+```text
+dist/VisualDuipai-x86_64.AppImage
+```
+
+### 手动验证
+
+```bash
+# 赋予执行权限
+chmod +x dist/VisualDuipai-x86_64.AppImage
+
+# 启动
+./dist/VisualDuipai-x86_64.AppImage
+```
+
+### AppImage 运行要求
+
+运行 AppImage 的系统需安装：
+- `libfuse2`（大多数发行版内置；若缺失，运行 `sudo apt install libfuse2`）
+- `g++` 并在 `PATH` 中
+
+### 打包原理
+
+1. PyInstaller 将 `duipai_gui.py` 和 Python 依赖打包为单文件二进制
+2. 构建标准 AppDir 结构（AppRun + .desktop + 图标 + 二进制）
+3. appimagetool 将 AppDir 封装为 AppImage
