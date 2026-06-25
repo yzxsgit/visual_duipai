@@ -73,6 +73,8 @@ cp "$ICON_SRC" "$APPDIR/VisualDuipai.png"
 cp "$ICON_SRC" "$APPDIR/.DirIcon"
 mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
 cp "$ICON_SRC" "$APPDIR/usr/share/icons/hicolor/256x256/apps/VisualDuipai.png"
+mkdir -p "$APPDIR/usr/share/pixmaps"
+cp "$ICON_SRC" "$APPDIR/usr/share/pixmaps/VisualDuipai.png"
 
 # AppRun 启动脚本
 cat > "$APPDIR/AppRun" << 'APPRUN_EOF'

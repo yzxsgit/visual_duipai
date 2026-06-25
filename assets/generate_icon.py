@@ -3,19 +3,19 @@
 from pathlib import Path
 from PIL import Image, ImageDraw
 
-SIZE = 260
+SIZE = 256
 MARGIN = 28
 
 BLUE = (31, 111, 235, 255)       # #1f6feb
 ORANGE = (219, 109, 40, 255)     # #db6d28
 WHITE_BG = (255, 255, 255, 255)
 
-CX = SIZE // 2                     # 130
+CX = SIZE // 2                     # 128
 CY = SIZE // 2
-START = (MARGIN + 10, CY)         # 起点 (38, 130)
-END = (SIZE - MARGIN - 10, CY)    # 终点 (222, 130)
+START = (MARGIN + 10, CY)         # 起点 (38, 128)
+END = (SIZE - MARGIN - 10, CY)    # 终点 (218, 128)
 
-DIAMOND_CX = CX + 14              # 菱形中心偏右 (144)
+DIAMOND_CX = CX + 14              # 菱形中心偏右 (142)
 DIAMOND_R = 28                    # 菱形半对角线长
 SPLIT_X = CX - 50                 # 分叉点 x (80)
 SPLIT_Y_OFFSET = 42               # 分叉上下偏移
