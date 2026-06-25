@@ -68,8 +68,11 @@ mkdir -p "$APPDIR/usr/bin"
 cp "$DIST_DIR/VisualDuipai" "$APPDIR/usr/bin/VisualDuipai"
 chmod +x "$APPDIR/usr/bin/VisualDuipai"
 
-# 复制图标
+# 复制图标（多处放置以兼容不同桌面环境）
 cp "$ICON_SRC" "$APPDIR/VisualDuipai.png"
+cp "$ICON_SRC" "$APPDIR/.DirIcon"
+mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+cp "$ICON_SRC" "$APPDIR/usr/share/icons/hicolor/256x256/apps/VisualDuipai.png"
 
 # AppRun 启动脚本
 cat > "$APPDIR/AppRun" << 'APPRUN_EOF'
