@@ -7,3 +7,7 @@ __pycache__/
 /VisualDuipai.spec
 *.zip
 *.exe
+
+# Linux AppImage 打包产物
+/AppDir/
+*.AppImage
