@@ -112,9 +112,9 @@ class DuipaiApp(TkinterDnD.Tk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(3, weight=1)
 
-        header = ctk.CTkLabel(self, text="对拍可视化工具", font=ctk.CTkFont(size=30, weight="bold"))
+        header = ctk.CTkLabel(self, text="对拍可视化工具", font=ctk.CTkFont(size=30, weight="bold"), text_color="black")
         header.grid(row=0, column=0, padx=24, pady=(20, 4), sticky="w")
-        subtitle = ctk.CTkLabel(self, text="选择三个 C++ 程序，自动编译、生成数据并比较输出。", text_color=("gray40", "gray75"))
+        subtitle = ctk.CTkLabel(self, text="选择三个 C++ 程序，自动编译、生成数据并比较输出。", text_color="black")
         subtitle.grid(row=1, column=0, padx=24, pady=(0, 16), sticky="w")
 
         cards = ctk.CTkFrame(self, fg_color="transparent")
