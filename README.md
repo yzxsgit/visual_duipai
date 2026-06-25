@@ -1,6 +1,6 @@
 # VisualDuipai
 
-一个用于算法题本地对拍的 Windows GUI 工具。
+一个用于算法题本地对拍的 GUI 工具，支持 Windows 和 Linux。
 
 VisualDuipai 帮你在本地反复运行“数据生成器 + 暴力程序 + 正解程序”，自动比较输出，方便在算法竞赛、刷题和调试时发现错误样例。
 

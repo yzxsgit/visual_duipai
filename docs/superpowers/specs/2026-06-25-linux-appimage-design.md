@@ -55,7 +55,7 @@ AppDir/
   [Desktop Entry]
   Name=VisualDuipai
   Comment=算法对拍可视化工具
-  Exec=VisualDuipai
+  Exec=usr/bin/VisualDuipai
   Icon=VisualDuipai
   Type=Application
   Categories=Development;

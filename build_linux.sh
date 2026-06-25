@@ -30,6 +30,7 @@ check_cmd() {
 step 1 "检查依赖..."
 check_cmd python3
 check_cmd g++
+check_cmd wget
 ok "构建环境检查完毕"
 
 # ── 步骤 2: 安装 Python 依赖 ────────────────────────────
@@ -83,7 +84,7 @@ cat > "$APPDIR/VisualDuipai.desktop" << 'DESKTOP_EOF'
 [Desktop Entry]
 Name=VisualDuipai
 Comment=算法对拍可视化工具
-Exec=VisualDuipai
+Exec=usr/bin/VisualDuipai
 Icon=VisualDuipai
 Type=Application
 Categories=Development;
