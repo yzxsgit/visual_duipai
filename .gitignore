@@ -11,3 +11,4 @@ __pycache__/
 # Linux AppImage 打包产物
 /AppDir/
 *.AppImage
+/squashfs-root/
