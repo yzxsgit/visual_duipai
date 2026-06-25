@@ -35,7 +35,7 @@ ok "构建环境检查完毕"
 
 # ── 步骤 2: 安装 Python 依赖 ────────────────────────────
 step 2 "安装 Python 依赖..."
-python3 -m pip install -r "$REQUIREMENTS" pyinstaller 2>&1 | tail -3
+python3 -m pip install --break-system-packages -r "$REQUIREMENTS" pyinstaller 2>&1 | tail -3
 ok "Python 依赖安装完毕"
 
 # ── 步骤 3: PyInstaller 打包 ────────────────────────────
