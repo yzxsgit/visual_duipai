@@ -182,3 +182,24 @@ Create a GitHub Release with:
 - Assets:
   - `VisualDuipai-v0.1.0-windows-x64.zip` (unchanged)
   - `VisualDuipai-v0.2.0-linux-x86_64.AppImage`
+
+## macOS .app Bundle release checklist
+
+### 1. Trigger the build
+
+- Push a tag `v0.2.0` to GitHub, or
+- Use GitHub Actions manual trigger (`workflow_dispatch`)
+
+### 2. Confirm the build passes
+
+- Navigate to Actions → Build macOS .app Bundle
+- Confirm all steps pass
+
+### 3. Download the artifact
+
+- From the completed workflow run, download `VisualDuipai-macos-<sha>.zip`
+- Rename to `VisualDuipai-v0.2.0-macos-arm64.zip`
+
+### 4. Add to GitHub Release
+
+Upload `VisualDuipai-v0.2.0-macos-arm64.zip` as a Release asset alongside the existing Windows and Linux assets.

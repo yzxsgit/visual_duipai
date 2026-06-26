@@ -41,6 +41,30 @@ g++ --version
 
 构建产物为 `dist/VisualDuipai-x86_64.AppImage`。
 
+## 推荐使用方式：下载 macOS 版本
+
+在 GitHub 仓库的 Releases 页面下载：
+
+```text
+VisualDuipai.app.zip
+```
+
+下载后：
+
+1. 解压 zip 文件得到 `VisualDuipai.app`。
+2. 右键 → 打开（首次需要绕过 Gatekeeper）。
+3. 在界面中选择或拖入暴力程序、正解程序和数据生成器。
+4. 设置对拍轮数。
+5. 点击开始运行。
+
+### 依赖
+
+系统必须安装 Xcode Command Line Tools（提供 `g++` / `clang++`）。
+
+```bash
+xcode-select --install
+```
+
 ## 推荐使用方式：下载 Windows 版本
 
 在 GitHub 仓库的 Releases 页面下载：

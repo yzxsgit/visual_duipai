@@ -105,3 +105,32 @@ chmod +x dist/VisualDuipai-x86_64.AppImage
 1. PyInstaller 将 `duipai_gui.py` 和 Python 依赖打包为单文件二进制
 2. 构建标准 AppDir 结构（AppRun + .desktop + 图标 + 二进制）
 3. appimagetool 将 AppDir 封装为 AppImage
+
+## macOS .app Bundle
+
+### 打包方式
+
+使用 GitHub Actions 自动构建，无需本地 macOS 环境。
+
+1. 推送代码到 GitHub（`main` 分支或 `v*` tag）
+2. Workflow `.github/workflows/build_macos.yml` 自动在 `macos-latest` runner 上执行
+3. 构建产物 `VisualDuipai.app.zip` 以 CI Artifact 形式保存
+
+### workflow 步骤
+
+1. Checkout code → Setup Python → Install dependencies → Run tests
+2. PyInstaller 打包为单文件二进制
+3. 构建 .app Bundle 目录结构
+4. 将 PNG 图标转换为 ICNS 格式（`sips` + `iconutil`）
+5. 生成 Info.plist 元数据
+6. 打包为 zip 并上传 Artifact
+
+### 运行要求
+
+- Apple Silicon Mac（GitHub 的 `macos-latest` runner 为 ARM 架构）
+- Xcode Command Line Tools（`xcode-select --install`）
+
+### 注意事项
+
+- 未签名的 .app 首次启动会被 Gatekeeper 阻止，右键 → 打开即可
+- 如果需要在 Intel Mac 上运行，需在 `macos-13`（Intel）runner 上单独构建
