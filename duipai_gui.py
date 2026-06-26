@@ -301,8 +301,15 @@ class DuipaiApp(TkinterDnD.Tk):
             os.startfile(paths.work_dir)  # type: ignore[attr-defined]
         except AttributeError:
             import subprocess
+            import sys as _sys
 
-            subprocess.Popen(["xdg-open", str(paths.work_dir)])
+            try:
+                if _sys.platform == "darwin":
+                    subprocess.Popen(["open", str(paths.work_dir)])
+                else:
+                    subprocess.Popen(["xdg-open", str(paths.work_dir)])
+            except FileNotFoundError:
+                subprocess.Popen(["xdg-open", str(paths.work_dir)])
         except Exception as exc:
             self._log(f"打开工作目录失败: {exc}")
 
