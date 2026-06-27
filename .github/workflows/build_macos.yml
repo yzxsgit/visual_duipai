@@ -34,13 +34,14 @@ jobs:
         run: |
           python -m unittest discover -p "test*.py"
 
-      - name: Build with PyInstaller
+      - name: Build with PyInstaller (--onefile)
         run: |
           rm -rf build dist
           python -m PyInstaller \
             --onefile \
             --noconsole \
             --name VisualDuipai \
+            --collect-all customtkinter \
             --collect-all tkinterdnd2 \
             duipai_gui.py
 
@@ -97,6 +98,11 @@ jobs:
           </dict>
           </plist>
           EOF
+
+      - name: Ad-hoc sign the .app bundle
+        run: |
+          codesign --force --deep --sign - "VisualDuipai.app"
+          codesign -dv "VisualDuipai.app" 2>&1 || echo "Note: ad-hoc signing verification diagnostic"
 
       - name: Verify .app bundle structure
         run: |

@@ -1,9 +1,31 @@
 from __future__ import annotations
 
 import queue
+import sys
 import threading
-import tkinter as tk
+import traceback
 from pathlib import Path
+
+# ── Crash diagnostics for packaged (PyInstaller) apps ──────────────
+if getattr(sys, 'frozen', False):
+    _crash_log_dir = Path.home() / "Library" / "Logs" / "VisualDuipai"
+    try:
+        _crash_log_dir.mkdir(parents=True, exist_ok=True)
+        _orig_hook = sys.excepthook
+
+        def _excepthook(typ, val, tb):
+            log_file = _crash_log_dir / "crash.log"
+            with open(str(log_file), "a") as f:
+                f.write("\n" + "=" * 60 + "\n")
+                traceback.print_exception(typ, val, tb, file=f)
+            if _orig_hook is not sys.excepthook:
+                _orig_hook(typ, val, tb)
+
+        sys.excepthook = _excepthook
+    except Exception:
+        pass
+
+import tkinter as tk
 from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
@@ -23,21 +45,27 @@ from stress_core import (
     write_diff,
 )
 
-APP_DIR = Path(__file__).resolve().parent
+# Work directory — use stable path when frozen (PyInstaller)
+if getattr(sys, 'frozen', False):
+    APP_DIR = Path(sys.executable).resolve().parent
+else:
+    APP_DIR = Path(__file__).resolve().parent
 WORK_DIR = APP_DIR / "duipai_work"
 
 
 class DropCard(ctk.CTkFrame):
-    def __init__(self, master: tk.Misc, title: str, on_selected):
+    def __init__(self, master: tk.Misc, title: str, on_selected, dnd_available: bool = False):
         super().__init__(master, corner_radius=16, border_width=1)
         self.on_selected = on_selected
         self.path: Path | None = None
+        self._dnd = dnd_available
 
         self.grid_columnconfigure(0, weight=1)
         self.title_label = ctk.CTkLabel(self, text=title, font=ctk.CTkFont(size=18, weight="bold"))
         self.title_label.grid(row=0, column=0, padx=18, pady=(18, 6), sticky="w")
 
-        self.hint_label = ctk.CTkLabel(self, text="拖入 .cpp 文件或点击选择", text_color=("gray45", "gray70"))
+        hint = "拖入 .cpp 文件或点击选择" if dnd_available else "点击选择 .cpp 文件"
+        self.hint_label = ctk.CTkLabel(self, text=hint, text_color=("gray45", "gray70"))
         self.hint_label.grid(row=1, column=0, padx=18, pady=(0, 10), sticky="w")
 
         self.path_label = ctk.CTkLabel(
@@ -52,8 +80,9 @@ class DropCard(ctk.CTkFrame):
 
         for widget in (self, self.title_label, self.hint_label, self.path_label):
             widget.bind("<Button-1>", self._choose_file)
-            widget.drop_target_register(DND_FILES)
-            widget.dnd_bind("<<Drop>>", self._handle_drop)
+            if dnd_available:
+                widget.drop_target_register(DND_FILES)
+                widget.dnd_bind("<<Drop>>", self._handle_drop)
 
     def set_enabled(self, enabled: bool) -> None:
         cursor = "hand2" if enabled else "arrow"
@@ -82,14 +111,27 @@ class DropCard(ctk.CTkFrame):
     def _handle_drop(self, event) -> None:
         if not getattr(self, "_enabled", True):
             return
+        if not self._dnd:
+            return
         paths = self.tk.splitlist(event.data)
         if paths:
             self.on_selected(self, paths[0])
 
 
-class DuipaiApp(TkinterDnD.Tk):
+class DuipaiApp(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
+
+        # Graceful DnD loading — may fail on macOS ARM (tkdnd Tcl 9 vs Tcl 8)
+        self._dnd_available = False
+        try:
+            TkinterDnD.require(self)
+            self._dnd_available = True
+        except RuntimeError:
+            pass
+        except tk.TclError:
+            pass
+
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
@@ -105,6 +147,8 @@ class DuipaiApp(TkinterDnD.Tk):
         self.after_id: str | None = None
 
         self._build_ui()
+        if not self._dnd_available:
+            self._log("提示：拖放功能不可用（当前平台不支持 tkdnd 库），请点击选择文件")
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.after_id = self.after(100, self._drain_events)
 
@@ -122,9 +166,9 @@ class DuipaiApp(TkinterDnD.Tk):
         for col in range(3):
             cards.grid_columnconfigure(col, weight=1, uniform="cards")
 
-        self.force_card = DropCard(cards, "暴力程序", self._select_cpp)
-        self.answer_card = DropCard(cards, "正解 / 待测", self._select_cpp)
-        self.gen_card = DropCard(cards, "数据生成器", self._select_cpp)
+        self.force_card = DropCard(cards, "暴力程序", self._select_cpp, dnd_available=self._dnd_available)
+        self.answer_card = DropCard(cards, "正解 / 待测", self._select_cpp, dnd_available=self._dnd_available)
+        self.gen_card = DropCard(cards, "数据生成器", self._select_cpp, dnd_available=self._dnd_available)
         self.force_card.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
         self.answer_card.grid(row=0, column=1, padx=10, sticky="nsew")
         self.gen_card.grid(row=0, column=2, padx=(10, 0), sticky="nsew")
